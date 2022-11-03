@@ -1,5 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { BehaviorSubject, combineLatest, Observable, of, Subject, timer } from 'rxjs';
+import {
+  BehaviorSubject,
+  combineLatest,
+  Observable,
+  of,
+  Subject,
+  timer,
+} from 'rxjs';
 import {
   catchError,
   delay,
@@ -34,22 +41,22 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.initialMessages$ = this.getInitialMessages();
     this.newMessages$ = this.getNewMessages();
-  //   const initialMessages$: Observable<string[]> = this.chatRestService.getMessages$(this._chatRoomId);
-  //   const newMessages$: Observable<string[]> = this.shatSocketService.getMessageEvents$(this._chatRoomId).pipe(
-  //     startWith([])
-  //   );
+    //   const initialMessages$: Observable<string[]> = this.chatRestService.getMessages$(this._chatRoomId);
+    //   const newMessages$: Observable<string[]> = this.shatSocketService.getMessageEvents$(this._chatRoomId).pipe(
+    //     startWith([])
+    //   );
 
-  // this.messages$ = initialMessages$.pipe(
-  //   concatMap(initialMessages => {
-  //     return this.clearChatSubject.asObservable().pipe(map(reset => reset ? [] : initialMessages))
-  //   }),
-  //   switchMap(initialMessages => {
-  //     return newMessages$.pipe(
-  //       map(newMessages => initialMessages.concat(newMessages)),
-  //       tap(mergedMessages => initialMessages = mergedMessages)
-  //     )
-  //   })
-  //);
+    // this.messages$ = initialMessages$.pipe(
+    //   concatMap(initialMessages => {
+    //     return this.clearChatSubject.asObservable().pipe(map(reset => reset ? [] : initialMessages))
+    //   }),
+    //   switchMap(initialMessages => {
+    //     return newMessages$.pipe(
+    //       map(newMessages => initialMessages.concat(newMessages)),
+    //       tap(mergedMessages => initialMessages = mergedMessages)
+    //     )
+    //   })
+    //);
   }
 
   ngOnDestroy() {
@@ -57,7 +64,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   clearChat() {
-    this.clearChatSubject.next(true);
+    this.clearChatSubject.next();
   }
 
   // Simulate remote queries
