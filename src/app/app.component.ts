@@ -4,8 +4,10 @@ import {
   combineLatest,
   Observable,
   of,
+  startWith,
   Subject,
   timer,
+  withLatestFrom,
 } from 'rxjs';
 import {
   catchError,
@@ -13,16 +15,13 @@ import {
   filter,
   finalize,
   map,
+  mergeScan,
+  scan,
   shareReplay,
   switchMap,
   takeUntil,
   tap,
 } from 'rxjs/operators';
-
-export interface MyData {
-  id: number;
-  label: string;
-}
 
 @Component({
   selector: 'my-app',
@@ -30,33 +29,39 @@ export interface MyData {
   styleUrls: ['./app.component.css'],
 })
 export class AppComponent implements OnInit, OnDestroy {
-  private destroySubject = new Subject<void>();
-  private destroyed$ = this.destroySubject.asObservable();
-
   initialMessages$: Observable<string[]>;
   newMessages$: Observable<string[]>;
   allMessages$: Observable<string[]>;
-  clearChatSubject = new Subject<void>();
+  isStopped$: Observable<boolean>;
+
+  private readonly clearChatSubject = new Subject<void>();
+  private readonly clearChat$ = this.clearChatSubject.asObservable();
+  private readonly destroySubject = new Subject<void>();
+  private readonly destroyed$ = this.destroySubject.asObservable();
 
   ngOnInit() {
-    this.initialMessages$ = this.getInitialMessages();
-    this.newMessages$ = this.getNewMessages();
-    //   const initialMessages$: Observable<string[]> = this.chatRestService.getMessages$(this._chatRoomId);
-    //   const newMessages$: Observable<string[]> = this.shatSocketService.getMessageEvents$(this._chatRoomId).pipe(
-    //     startWith([])
-    //   );
+    this.initialMessages$ = this.getInitialMessages().pipe(
+      startWith([]),
+      takeUntil(this.destroyed$)
+    );
 
-    // this.messages$ = initialMessages$.pipe(
-    //   concatMap(initialMessages => {
-    //     return this.clearChatSubject.asObservable().pipe(map(reset => reset ? [] : initialMessages))
-    //   }),
-    //   switchMap(initialMessages => {
-    //     return newMessages$.pipe(
-    //       map(newMessages => initialMessages.concat(newMessages)),
-    //       tap(mergedMessages => initialMessages = mergedMessages)
-    //     )
-    //   })
-    //);
+    this.newMessages$ = this.getNewMessages().pipe(
+      startWith([]),
+      shareReplay(),
+      takeUntil(this.destroyed$)
+    );
+
+    this.allMessages$ = combineLatest([
+      this.initialMessages$,
+      this.newMessages$,
+    ]).pipe(
+      map(([initMessages, newMessages]) => [...initMessages, ...newMessages]),
+      takeUntil(this.destroyed$)
+    );
+
+    // Automatically stop the streams
+    setTimeout(() => this.destroySubject.next(), 10000);
+    this.isStopped$ = this.destroyed$.pipe(map(() => true));
   }
 
   ngOnDestroy() {
@@ -70,14 +75,17 @@ export class AppComponent implements OnInit, OnDestroy {
   // Simulate remote queries
   private getInitialMessages(): Observable<string[]> {
     return of(['init message 1', 'init message 2', 'init message 3']).pipe(
-      delay(1000) // Simulate delay from backend
+      delay(2000) // Simulate delay from backend
     );
   }
 
   private newMessageNumber: number = 1;
   private getNewMessages(): Observable<string[]> {
     return timer(1000, 2000).pipe(
-      map(() => $`new message ${this.newMessageNumber++}`)
+      map(() => [`new message ${++this.newMessageNumber}`]),
+      scan((acc, curr) => {
+        return [...curr, ...acc];
+      }, [])
     );
   }
 }

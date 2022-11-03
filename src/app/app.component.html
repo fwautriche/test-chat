@@ -1,7 +1,14 @@
-<p>Test Chat</p>
+<h1>Test Chat</h1>
 
+<h3>initialMessages:</h3>
 <pre>{{ initialMessages$ | async | json }}</pre>
+
+<h3>newMessages:</h3>
 <pre>{{ newMessages$ | async | json }}</pre>
 
-<div *ngFor="let message of allMessages$ | async">{{ message }}</div>
+<h3>allMessages:</h3>
+<pre>{{ allMessages$ | async | json }}</pre>
+
+<div *ngIf="isStopped$ | async">Streams stopped!</div>
+
 <button (click)="(clearChat)">Clear Chat</button>
