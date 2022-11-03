@@ -1,26 +1,18 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import {
-  BehaviorSubject,
   combineLatest,
   Observable,
   of,
   startWith,
   Subject,
   timer,
-  withLatestFrom,
 } from 'rxjs';
 import {
-  catchError,
   delay,
-  filter,
-  finalize,
   map,
-  mergeScan,
   scan,
   shareReplay,
-  switchMap,
   takeUntil,
-  tap,
 } from 'rxjs/operators';
 
 @Component({
@@ -46,7 +38,7 @@ export class AppComponent implements OnInit, OnDestroy {
     );
 
     this.newMessages$ = this.getNewMessages().pipe(
-      startWith([]),
+      scan((acc, curr) => [curr, ...acc], []),
       shareReplay(),
       takeUntil(this.destroyed$)
     );
@@ -80,12 +72,9 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private newMessageNumber: number = 1;
-  private getNewMessages(): Observable<string[]> {
+  private getNewMessages(): Observable<string> {
     return timer(1000, 2000).pipe(
-      map(() => [`new message ${++this.newMessageNumber}`]),
-      scan((acc, curr) => {
-        return [...curr, ...acc];
-      }, [])
+      map(() => `new message ${++this.newMessageNumber}`)
     );
   }
 }
