@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { BehaviorSubject, combineLatest, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, combineLatest, Observable, of, Subject, timer } from 'rxjs';
 import {
   catchError,
   delay,
@@ -23,66 +23,54 @@ export interface MyData {
   styleUrls: ['./app.component.css'],
 })
 export class AppComponent implements OnInit, OnDestroy {
-  private routeIdSimulation: number = 1;
-  private activatedRouteSubject = new BehaviorSubject<number>(
-    this.routeIdSimulation
-  );
-
-  data$: Observable<MyData>;
-  isDataLoading: boolean;
-  isDataLoadingError: boolean;
-  isDataLoaded: boolean;
-  isData$: Observable<boolean>;
-
   private destroySubject = new Subject<void>();
   private destroyed$ = this.destroySubject.asObservable();
 
-  ngOnInit() {
-    // This is the simulation a angular route change (cf. this.activatedRoute.params.pipe(...))
-    const routeId$ = this.activatedRouteSubject
-      .asObservable()
-      .pipe(filter((id) => id != null));
+  initialMessages$: Observable<string[]>;
+  newMessages$: Observable<string[]>;
+  allMessages$: Observable<string[]>;
+  clearChatSubject = new Subject<void>();
 
-    this.data$ = routeId$.pipe(
-      tap(() => {
-        this.isDataLoading = true;
-        this.isDataLoadingError = false;
-        this.isDataLoaded = false;
-      }),
-      switchMap((id) =>
-        this.getAsyncData(id).pipe(
-          finalize(() => {
-            this.isDataLoading = false;
-            this.isDataLoaded = true;
-          }),
-          catchError((error) => {
-            this.isDataLoadingError = true;
-            return of(null);
-          }),
-          takeUntil(this.destroyed$)
-        )
-      ),
-      shareReplay()
-    );
-    this.isData$ = this.data$.pipe(map((data) => data != null));
+  ngOnInit() {
+    this.initialMessages$ = this.getInitialMessages();
+    this.newMessages$ = this.getNewMessages();
+  //   const initialMessages$: Observable<string[]> = this.chatRestService.getMessages$(this._chatRoomId);
+  //   const newMessages$: Observable<string[]> = this.shatSocketService.getMessageEvents$(this._chatRoomId).pipe(
+  //     startWith([])
+  //   );
+
+  // this.messages$ = initialMessages$.pipe(
+  //   concatMap(initialMessages => {
+  //     return this.clearChatSubject.asObservable().pipe(map(reset => reset ? [] : initialMessages))
+  //   }),
+  //   switchMap(initialMessages => {
+  //     return newMessages$.pipe(
+  //       map(newMessages => initialMessages.concat(newMessages)),
+  //       tap(mergedMessages => initialMessages = mergedMessages)
+  //     )
+  //   })
+  //);
   }
 
   ngOnDestroy() {
     this.destroySubject.next();
   }
 
-  simulateRouteChange() {
-    this.routeIdSimulation++;
-    this.activatedRouteSubject.next(this.routeIdSimulation);
+  clearChat() {
+    this.clearChatSubject.next(true);
   }
 
-  // Simulate a remote query
-  private getAsyncData(id: number): Observable<MyData> {
-    return of({
-      id,
-      label: `test ${id}`,
-    }).pipe(
-      delay(2000) // Simulate delay from backend
+  // Simulate remote queries
+  private getInitialMessages(): Observable<string[]> {
+    return of(['init message 1', 'init message 2', 'init message 3']).pipe(
+      delay(1000) // Simulate delay from backend
+    );
+  }
+
+  private newMessageNumber: number = 1;
+  private getNewMessages(): Observable<string[]> {
+    return timer(1000, 2000).pipe(
+      map(() => $`new message ${this.newMessageNumber++}`)
     );
   }
 }
